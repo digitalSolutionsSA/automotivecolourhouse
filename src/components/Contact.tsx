@@ -3,7 +3,7 @@ import { gsap } from '../lib/gsap';
 import { Arrow, Instagram, Mail } from './Icons';
 
 const INTERESTS = ['Colour change', 'Paint protection', 'Dealership / trade', 'Just following along'];
-const EMAIL = 'info@automotivecolourhouse.co.za';
+const EMAIL = 'info@abautomotive.co.za';
 
 export default function Contact() {
   const [interest, setInterest] = useState(INTERESTS[0]);
