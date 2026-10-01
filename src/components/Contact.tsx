@@ -4,25 +4,44 @@ import { Arrow, Instagram, Mail } from './Icons';
 
 const INTERESTS = ['Colour change', 'Paint protection', 'Dealership / trade', 'Just following along'];
 const EMAIL = 'info@abautomotive.co.za';
+// FormSubmit relays the enquiry to EMAIL; the first submission sends an activation link to that inbox.
+const FORM_ENDPOINT = `https://formsubmit.co/ajax/${EMAIL}`;
 
 export default function Contact() {
   const [interest, setInterest] = useState(INTERESTS[0]);
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(false);
   const form = useRef<HTMLFormElement>(null);
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    // No backend yet: hand the enquiry to the visitor's mail client.
-    const body = [
-      `Name: ${data.get('name')}`,
-      `Email: ${data.get('email')}`,
-      `Vehicle: ${data.get('vehicle') || '-'}`,
-      `Interest: ${interest}`,
-      '',
-      String(data.get('message') || ''),
-    ].join('\n');
-    window.location.href = `mailto:${EMAIL}?subject=${encodeURIComponent('Automotive Colour House enquiry')}&body=${encodeURIComponent(body)}`;
+    setSending(true);
+    setError(false);
+    try {
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          _subject: `Website enquiry: ${interest}`,
+          _template: 'table',
+          _replyto: data.get('email'),
+          Name: data.get('name'),
+          Email: data.get('email'),
+          Vehicle: data.get('vehicle') || '-',
+          Interest: interest,
+          Message: data.get('message') || '-',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || String(json.success) !== 'true') throw new Error(json.message);
+    } catch {
+      setError(true);
+      setSending(false);
+      return;
+    }
+    setSending(false);
     gsap.to(form.current, {
       opacity: 0,
       y: -20,
@@ -66,7 +85,7 @@ export default function Contact() {
           <div className="contact-thanks">
             <span className="dash" />
             <h3>Thank you.</h3>
-            <p>Your enquiry is ready in your email app. We'll be in touch as our journey unfolds.</p>
+            <p>Your enquiry has been sent. We'll be in touch as our journey unfolds.</p>
             <button className="btn btn-outline" onClick={() => setSent(false)}>Send another</button>
           </div>
         ) : (
@@ -97,9 +116,15 @@ export default function Contact() {
               <textarea name="message" rows={3} placeholder=" " />
               <span>Message</span>
             </label>
-            <button type="submit" className="btn btn-solid">
-              Register interest <Arrow />
+            <button type="submit" className="btn btn-solid" disabled={sending}>
+              {sending ? 'Sending…' : 'Register interest'} <Arrow />
             </button>
+            {error && (
+              <p className="form-error" role="alert">
+                Something went wrong sending your enquiry. Please try again or email us at{' '}
+                <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
+              </p>
+            )}
           </form>
         )}
       </div>

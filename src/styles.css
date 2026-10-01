@@ -1439,6 +1439,18 @@ button {
 .contact .btn-solid::before {
   background: #3a3a3a;
 }
+.contact .btn-solid:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.form-error {
+  font-size: 13px;
+  color: #a12a2a;
+}
+.form-error a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .contact-thanks h3 {
   margin: 24px 0 14px;
   font-family: var(--display);
