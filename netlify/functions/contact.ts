@@ -47,6 +47,11 @@ export default async (req: Request) => {
     )
     .join('')}</table>`;
 
+  if (!process.env.RESEND_API_KEY) {
+    console.error('RESEND_API_KEY is not set');
+    return json(500, { ok: false, error: 'RESEND_API_KEY is not set' });
+  }
+
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -61,8 +66,10 @@ export default async (req: Request) => {
   });
 
   if (!res.ok) {
-    console.error('Resend error', res.status, await res.text());
-    return json(502, { ok: false });
+    // Resend's error body (e.g. invalid key, unverified domain) holds no secrets; surface it for debugging.
+    const detail = await res.text();
+    console.error('Resend error', res.status, detail);
+    return json(502, { ok: false, error: `Resend ${res.status}: ${detail.slice(0, 300)}` });
   }
   return json(200, { ok: true });
 };
