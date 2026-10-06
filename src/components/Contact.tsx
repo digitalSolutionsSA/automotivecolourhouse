@@ -4,8 +4,8 @@ import { Arrow, Instagram, Mail } from './Icons';
 
 const INTERESTS = ['Colour change', 'Paint protection', 'Dealership / trade', 'Just following along'];
 const EMAIL = 'info@abautomotive.co.za';
-// FormSubmit relays the enquiry to EMAIL; the first submission sends an activation link to that inbox.
-const FORM_ENDPOINT = `https://formsubmit.co/ajax/${EMAIL}`;
+// Netlify function (netlify/functions/contact.ts) that emails the enquiry via Resend.
+const FORM_ENDPOINT = '/api/contact';
 
 export default function Contact() {
   const [interest, setInterest] = useState(INTERESTS[0]);
@@ -23,19 +23,9 @@ export default function Contact() {
       const res = await fetch(FORM_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          _subject: `Website enquiry: ${interest}`,
-          _template: 'table',
-          _replyto: data.get('email'),
-          Name: data.get('name'),
-          Email: data.get('email'),
-          Vehicle: data.get('vehicle') || '-',
-          Interest: interest,
-          Message: data.get('message') || '-',
-        }),
+        body: JSON.stringify({ ...Object.fromEntries(data), interest }),
       });
-      const json = await res.json();
-      if (!res.ok || String(json.success) !== 'true') throw new Error(json.message);
+      if (!res.ok) throw new Error(`Contact request failed: ${res.status}`);
     } catch {
       setError(true);
       setSending(false);
@@ -116,6 +106,7 @@ export default function Contact() {
               <textarea name="message" rows={3} placeholder=" " />
               <span>Message</span>
             </label>
+            <input name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hp-field" />
             <button type="submit" className="btn btn-solid" disabled={sending}>
               {sending ? 'Sending…' : 'Register interest'} <Arrow />
             </button>
